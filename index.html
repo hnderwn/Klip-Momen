@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KlipMomen - Elegant Frame Extractor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lora:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        font-family: 'Lora', serif;
+        /* The magic: A subtle, blurry radial gradient background */
+        background: radial-gradient(ellipse at top, #fffbf5, #fdf5e6 70%);
+        background-attachment: fixed;
+        color: #4a4a4a;
+      }
+      h1,
+      h2 {
+        font-family: 'Playfair Display', serif;
+      }
+      .main-title {
+        color: #8b4513; /* SaddleBrown */
+      }
+      /* Custom scrollbar matching the cream theme */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #fdf5e6;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d2b48c;
+        border-radius: 10px;
+      } /* Tan */
+      ::-webkit-scrollbar-thumb:hover {
+        background: #b8860b;
+      } /* DarkGoldenRod */
+      .upload-area {
+        border: 2px dashed #d2b48c;
+        transition: all 0.3s ease;
+      }
+      .upload-area.dragover {
+        border-color: #8b4513;
+        background-color: #fffaf0; /* FloralWhite */
+      }
+    </style>
+  </head>
+  <body class="flex flex-col items-center p-4 sm:p-6 lg:p-8 min-h-screen">
+    <div class="w-full max-w-7xl mx-auto">
+      <!-- Header -->
+      <header class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-bold main-title">KlipMomen</h1>
+        <p class="text-gray-600 mt-2 text-lg">Ambil setiap frame dari klip video Anda dengan mudah.</p>
+      </header>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Left Column: Video & Controls -->
+        <div class="bg-white/70 backdrop-blur-sm border border-white/30 rounded-2xl shadow-xl p-6 flex flex-col space-y-6">
+          <!-- Video Preview Area -->
+          <div id="video-container" class="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center upload-area">
+            <div id="upload-prompt" class="text-center text-gray-500 cursor-pointer p-4">
+              <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                <path
+                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+              </svg>
+              <p class="mt-2">Klik atau seret file video ke sini</p>
+              <p class="text-xs text-gray-400">MP4, WebM, Ogg</p>
+            </div>
+            <video id="videoPlayer" class="w-full h-full rounded-lg object-contain hidden" controls></video>
+          </div>
+          <input type="file" id="videoUpload" accept="video/*" class="hidden" />
+
+          <!-- Controls -->
+          <div class="space-y-4">
+            <div>
+              <label for="interval" class="block mb-2 text-sm font-medium text-gray-700">Interval Ekstraksi (milidetik)</label>
+              <input
+                type="number"
+                id="interval"
+                value="1000"
+                min="100"
+                step="100"
+                class="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 text-sm rounded-lg focus:ring-[#A0522D] focus:border-[#A0522D] block p-2.5"
+              />
+            </div>
+            <div class="flex items-center gap-4">
+              <button
+                id="resetVideoBtn"
+                title="Reset Video & Hasil"
+                class="w-1/4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-gray-200 disabled:text-gray-400 flex items-center justify-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L20.5 10"></path>
+                  <path d="M20.49 15a9 9 0 0 1-14.85 3.36L3.5 14"></path>
+                </svg>
+              </button>
+              <button
+                id="extractBtn"
+                class="w-3/4 bg-[#8B4513] hover:bg-[#A0522D] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12.3833V5.5C2 3.567 3.567 2 5.5 2H12.4142C13.2045 2 13.9602 2.31607 14.5228 2.87868L20.1213 8.47717C20.6839 9.03979 21 9.79549 21 10.5858V18.5C21 20.433 19.433 22 17.5 22H9.5"></path>
+                  <path d="M8 2V9H15"></path>
+                  <path d="M4 18.5L6 16.5L8 18.5L10 16.5L12 18.5"></path>
+                </svg>
+                Mulai Ekstrak
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Results -->
+        <div class="bg-white/70 backdrop-blur-sm border border-white/30 rounded-2xl shadow-xl p-6 flex flex-col h-auto">
+          <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 pb-2">
+            <h2 class="text-2xl font-semibold">Hasil Frame</h2>
+            <div class="flex gap-2">
+              <button id="clearResultsBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-300 disabled:bg-gray-300">Bersihkan Hasil</button>
+              <button id="downloadBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-300 disabled:bg-gray-300">Unduh Semua (.zip)</button>
+            </div>
+          </div>
+          <div id="status" class="text-center text-yellow-600 h-6 mb-2"></div>
+          <div id="frameContainer" class="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto p-2 bg-gray-50 rounded-lg min-h-0 max-h-[50vh]">
+            <p id="placeholder" class="col-span-full text-center text-gray-500 self-center">Unggah video untuk memulai.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Hidden canvas for processing -->
+      <canvas id="canvas" class="hidden"></canvas>
+    </div>
+
+    <script>
+      // DOM Elements
+      const uploadPrompt = document.getElementById('upload-prompt');
+      const videoUpload = document.getElementById('videoUpload');
+      const videoContainer = document.getElementById('video-container');
+      const intervalInput = document.getElementById('interval');
+      const extractBtn = document.getElementById('extractBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const clearResultsBtn = document.getElementById('clearResultsBtn');
+      const resetVideoBtn = document.getElementById('resetVideoBtn');
+      const videoPlayer = document.getElementById('videoPlayer');
+      const canvas = document.getElementById('canvas');
+      const frameContainer = document.getElementById('frameContainer');
+      const statusDiv = document.getElementById('status');
+      const placeholder = document.getElementById('placeholder');
+      const ctx = canvas.getContext('2d');
+
+      let videoFile = null;
+      let extractedFramesData = [];
+
+      // Initial State
+      extractBtn.disabled = true;
+      downloadBtn.disabled = true;
+      clearResultsBtn.disabled = true;
+      resetVideoBtn.disabled = true;
+
+      // Event Listeners
+      uploadPrompt.addEventListener('click', () => videoUpload.click());
+      videoContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        videoContainer.classList.add('dragover');
+      });
+      videoContainer.addEventListener('dragleave', () => videoContainer.classList.remove('dragover'));
+      videoContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        videoContainer.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+          handleFileUpload(files[0]);
+        }
+      });
+      videoUpload.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+      extractBtn.addEventListener('click', startExtraction);
+      downloadBtn.addEventListener('click', downloadAllFrames);
+      clearResultsBtn.addEventListener('click', clearFrames);
+      resetVideoBtn.addEventListener('click', () => resetVideoAndFrames(false));
+
+      function handleFileUpload(file) {
+        if (file && file.type.startsWith('video/')) {
+          // Fully reset state before loading a new video to prevent bugs
+          resetVideoAndFrames(true); // 'true' to keep the new file reference
+
+          videoFile = file;
+          const fileURL = URL.createObjectURL(videoFile);
+          videoPlayer.src = fileURL;
+          uploadPrompt.classList.add('hidden');
+          videoPlayer.classList.remove('hidden');
+          extractBtn.disabled = false;
+          resetVideoBtn.disabled = false;
+          if (placeholder) placeholder.textContent = "Video siap. Klik 'Mulai Ekstrak'.";
+        } else {
+          alert('File tidak valid. Silakan pilih file video.');
+        }
+      }
+
+      function startExtraction() {
+        if (!videoFile) return;
+
+        const interval = parseFloat(intervalInput.value);
+        if (isNaN(interval) || interval < 50) {
+          alert('Interval minimal 50 ms!');
+          return;
+        }
+
+        // Reset UI
+        clearFrames();
+        statusDiv.textContent = 'Mempersiapkan video...';
+        setButtonsState(true);
+
+        videoPlayer.onloadedmetadata = () => {
+          canvas.width = videoPlayer.videoWidth;
+          canvas.height = videoPlayer.videoHeight;
+          statusDiv.textContent = `Video dimuat. Durasi: ${videoPlayer.duration.toFixed(2)}s.`;
+          extractFrames(interval / 1000); // Convert ms to seconds for video.currentTime
+        };
+        // If metadata is already loaded
+        if (videoPlayer.readyState >= 1) {
+          videoPlayer.onloadedmetadata();
+        }
+      }
+
+      function extractFrames(intervalInSeconds) {
+        let currentTime = 0;
+        const duration = videoPlayer.duration;
+        let frameCount = 0;
+
+        const existingPlaceholder = document.getElementById('placeholder');
+        if (existingPlaceholder) existingPlaceholder.remove();
+
+        const seek = () => {
+          if (currentTime < duration) {
+            videoPlayer.currentTime = currentTime;
+          } else {
+            statusDiv.textContent = `Selesai! ${frameCount} frame berhasil diekstrak.`;
+            setButtonsState(false, extractedFramesData.length > 0);
+            videoPlayer.onseeked = null;
+          }
+        };
+
+        videoPlayer.onseeked = () => {
+          ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+          const frameDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          extractedFramesData.push(frameDataUrl);
+
+          displayFrame(frameDataUrl, currentTime);
+          frameCount++;
+
+          const progress = (currentTime / duration) * 100;
+          statusDiv.textContent = `Mengekstrak... ${progress.toFixed(0)}% (${frameCount} frame)`;
+
+          currentTime += intervalInSeconds;
+          seek();
+        };
+
+        seek();
+      }
+
+      function displayFrame(src, time) {
+        const frameWrapper = document.createElement('div');
+        frameWrapper.className = 'relative group';
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = 'w-full h-auto object-cover rounded-lg shadow-md transition-transform transform group-hover:scale-105';
+
+        const timestamp = document.createElement('span');
+        timestamp.textContent = `${time.toFixed(2)}s`;
+        timestamp.className = 'absolute bottom-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded';
+
+        frameWrapper.appendChild(img);
+        frameWrapper.appendChild(timestamp);
+        frameContainer.appendChild(frameWrapper);
+      }
+
+      async function downloadAllFrames() {
+        if (extractedFramesData.length === 0) return;
+        statusDiv.textContent = 'Membuat file zip...';
+        setButtonsState(true);
+
+        const zip = new JSZip();
+        extractedFramesData.forEach((dataUrl, index) => {
+          const base64Data = dataUrl.split(',')[1];
+          zip.file(`frame_${String(index + 1).padStart(4, '0')}.jpg`, base64Data, { base64: true });
+        });
+
+        try {
+          const content = await zip.generateAsync({ type: 'blob' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(content);
+          const videoName = videoFile.name.split('.').slice(0, -1).join('.') || 'frames';
+          link.download = `${videoName}-frames.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          statusDiv.textContent = 'File zip berhasil diunduh!';
+        } catch (error) {
+          console.error('Error zipping files:', error);
+          statusDiv.textContent = 'Gagal membuat file zip.';
+        } finally {
+          setButtonsState(false, extractedFramesData.length > 0);
+        }
+      }
+
+      function clearFrames() {
+        frameContainer.innerHTML = '';
+        extractedFramesData = [];
+        downloadBtn.disabled = true;
+        clearResultsBtn.disabled = true;
+        if (!document.getElementById('placeholder')) {
+          frameContainer.innerHTML = '<p id="placeholder" class="col-span-full text-center text-gray-500 self-center">Hasil frame akan muncul di sini.</p>';
+        }
+      }
+
+      function resetVideoAndFrames(keepFile = false) {
+        videoPlayer.pause();
+        videoPlayer.removeAttribute('src');
+        videoPlayer.load();
+        videoPlayer.onloadedmetadata = null;
+        videoPlayer.onseeked = null;
+        videoPlayer.classList.add('hidden');
+        uploadPrompt.classList.remove('hidden');
+        clearFrames();
+        statusDiv.textContent = '';
+        if (!keepFile) {
+          videoFile = null;
+          videoUpload.value = '';
+        }
+        extractBtn.disabled = true;
+        resetVideoBtn.disabled = true;
+      }
+
+      function setButtonsState(isExtracting, hasResults = false) {
+        extractBtn.disabled = isExtracting;
+        intervalInput.disabled = isExtracting;
+        videoUpload.disabled = isExtracting;
+        resetVideoBtn.disabled = isExtracting;
+        downloadBtn.disabled = isExtracting || !hasResults;
+        clearResultsBtn.disabled = isExtracting || !hasResults;
+        const originalBtnContent = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.3833V5.5C2 3.567 3.567 2 5.5 2H12.4142C13.2045 2 13.9602 2.31607 14.5228 2.87868L20.1213 8.47717C20.6839 9.03979 21 9.79549 21 10.5858V18.5C21 20.433 19.433 22 17.5 22H9.5"></path><path d="M8 2V9H15"></path><path d="M4 18.5L6 16.5L8 18.5L10 16.5L12 18.5"></path></svg> Mulai Ekstrak`;
+        extractBtn.innerHTML = isExtracting
+          ? '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memproses...'
+          : originalBtnContent;
+      }
+    </script>
+  </body>
+</html>
