@@ -12,10 +12,19 @@
     <style>
       body {
         font-family: 'Lora', serif;
-        /* The magic: A subtle, blurry radial gradient background */
-        background: radial-gradient(ellipse at top, #fffbf5, #fdf5e6 70%);
-        background-attachment: fixed;
+        background-color: #fdf5e6; /* Base cream color */
         color: #4a4a4a;
+        overflow-x: hidden; /* Prevent horizontal scroll from gradient blur */
+      }
+      #background-gradient-blur {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        background-image: radial-gradient(circle at 25% 40%, hsla(39, 100%, 80%, 0.7) 0px, transparent 40%), radial-gradient(circle at 75% 60%, hsla(28, 100%, 88%, 0.8) 0px, transparent 40%);
+        filter: blur(100px); /* This adds the soft blur effect */
       }
       h1,
       h2 {
@@ -46,10 +55,17 @@
         border-color: #8b4513;
         background-color: #fffaf0; /* FloralWhite */
       }
+      .main-content {
+        position: relative;
+        z-index: 1;
+      }
     </style>
   </head>
   <body class="flex flex-col items-center p-4 sm:p-6 lg:p-8 min-h-screen">
-    <div class="w-full max-w-7xl mx-auto">
+    <!-- This is the new gradient layer -->
+    <div id="background-gradient-blur"></div>
+
+    <div class="w-full max-w-7xl mx-auto main-content">
       <!-- Header -->
       <header class="text-center mb-10">
         <h1 class="text-4xl md:text-5xl font-bold main-title">KlipMomen</h1>
@@ -58,9 +74,9 @@
 
       <div class="grid md:grid-cols-2 gap-8">
         <!-- Left Column: Video & Controls -->
-        <div class="bg-white/70 backdrop-blur-sm border border-white/30 rounded-2xl shadow-xl p-6 flex flex-col space-y-6">
+        <div class="bg-white/80 backdrop-blur-lg border border-white/40 rounded-2xl shadow-xl p-6 flex flex-col space-y-6">
           <!-- Video Preview Area -->
-          <div id="video-container" class="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center upload-area">
+          <div id="video-container" class="w-full aspect-video bg-gray-100/80 rounded-lg flex items-center justify-center upload-area">
             <div id="upload-prompt" class="text-center text-gray-500 cursor-pointer p-4">
               <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                 <path
@@ -119,16 +135,16 @@
         </div>
 
         <!-- Right Column: Results -->
-        <div class="bg-white/70 backdrop-blur-sm border border-white/30 rounded-2xl shadow-xl p-6 flex flex-col h-auto">
+        <div class="bg-white/80 backdrop-blur-lg border border-white/40 rounded-2xl shadow-xl p-6 flex flex-col h-auto">
           <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 pb-2">
             <h2 class="text-2xl font-semibold">Hasil Frame</h2>
             <div class="flex gap-2">
               <button id="clearResultsBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-300 disabled:bg-gray-300">Bersihkan Hasil</button>
-              <button id="downloadBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-300 disabled:bg-gray-300">Unduh Semua (.zip)</button>
+              <button id="downloadBtn" class="bg-stone-600 hover:bg-stone-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-300 disabled:bg-gray-300">Unduh Semua (.zip)</button>
             </div>
           </div>
           <div id="status" class="text-center text-yellow-600 h-6 mb-2"></div>
-          <div id="frameContainer" class="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto p-2 bg-gray-50 rounded-lg min-h-0 max-h-[50vh]">
+          <div id="frameContainer" class="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto p-2 bg-gray-50/80 rounded-lg min-h-0 max-h-[50vh]">
             <p id="placeholder" class="col-span-full text-center text-gray-500 self-center">Unggah video untuk memulai.</p>
           </div>
         </div>
