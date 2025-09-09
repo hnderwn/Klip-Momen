@@ -12,9 +12,9 @@
     <style>
       body {
         font-family: 'Lora', serif;
-        background-color: #fdf5e6; /* Base cream color */
+        background-color: #fdf5e6;
         color: #4a4a4a;
-        overflow-x: hidden; /* Prevent horizontal scroll from gradient blur */
+        overflow-x: hidden;
       }
       #background-gradient-blur {
         position: absolute;
@@ -24,16 +24,15 @@
         height: 100%;
         z-index: 0;
         background-image: radial-gradient(circle at 25% 40%, hsla(39, 100%, 80%, 0.7) 0px, transparent 40%), radial-gradient(circle at 75% 60%, hsla(28, 100%, 88%, 0.8) 0px, transparent 40%);
-        filter: blur(100px); /* This adds the soft blur effect */
+        filter: blur(100px);
       }
       h1,
       h2 {
         font-family: 'Playfair Display', serif;
       }
       .main-title {
-        color: #8b4513; /* SaddleBrown */
+        color: #8b4513;
       }
-      /* Custom scrollbar matching the cream theme */
       ::-webkit-scrollbar {
         width: 8px;
       }
@@ -43,17 +42,17 @@
       ::-webkit-scrollbar-thumb {
         background: #d2b48c;
         border-radius: 10px;
-      } /* Tan */
+      }
       ::-webkit-scrollbar-thumb:hover {
         background: #b8860b;
-      } /* DarkGoldenRod */
+      }
       .upload-area {
         border: 2px dashed #d2b48c;
         transition: all 0.3s ease;
       }
       .upload-area.dragover {
         border-color: #8b4513;
-        background-color: #fffaf0; /* FloralWhite */
+        background-color: #fffaf0;
       }
       .main-content {
         position: relative;
@@ -62,20 +61,16 @@
     </style>
   </head>
   <body class="flex flex-col items-center p-4 sm:p-6 lg:p-8 min-h-screen">
-    <!-- This is the new gradient layer -->
     <div id="background-gradient-blur"></div>
 
     <div class="w-full max-w-7xl mx-auto main-content">
-      <!-- Header -->
       <header class="text-center mb-10">
         <h1 class="text-4xl md:text-5xl font-bold main-title">KlipMomen</h1>
         <p class="text-gray-600 mt-2 text-lg">Ambil setiap frame dari klip video Anda dengan mudah.</p>
       </header>
 
       <div class="grid md:grid-cols-2 gap-8">
-        <!-- Left Column: Video & Controls -->
         <div class="bg-white/80 backdrop-blur-lg border border-white/40 rounded-2xl shadow-xl p-6 flex flex-col space-y-6">
-          <!-- Video Preview Area -->
           <div id="video-container" class="w-full aspect-video bg-gray-100/80 rounded-lg flex items-center justify-center upload-area">
             <div id="upload-prompt" class="text-center text-gray-500 cursor-pointer p-4">
               <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
@@ -93,7 +88,6 @@
           </div>
           <input type="file" id="videoUpload" accept="video/*" class="hidden" />
 
-          <!-- Controls -->
           <div class="space-y-4">
             <div>
               <label for="interval" class="block mb-2 text-sm font-medium text-gray-700">Interval Ekstraksi (milidetik)</label>
@@ -134,7 +128,6 @@
           </div>
         </div>
 
-        <!-- Right Column: Results -->
         <div class="bg-white/80 backdrop-blur-lg border border-white/40 rounded-2xl shadow-xl p-6 flex flex-col h-auto">
           <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 pb-2">
             <h2 class="text-2xl font-semibold">Hasil Frame</h2>
@@ -149,12 +142,10 @@
           </div>
         </div>
       </div>
-      <!-- Hidden canvas for processing -->
       <canvas id="canvas" class="hidden"></canvas>
     </div>
 
     <script>
-      // DOM Elements
       const uploadPrompt = document.getElementById('upload-prompt');
       const videoUpload = document.getElementById('videoUpload');
       const videoContainer = document.getElementById('video-container');
@@ -173,13 +164,11 @@
       let videoFile = null;
       let extractedFramesData = [];
 
-      // Initial State
       extractBtn.disabled = true;
       downloadBtn.disabled = true;
       clearResultsBtn.disabled = true;
       resetVideoBtn.disabled = true;
 
-      // Event Listeners
       uploadPrompt.addEventListener('click', () => videoUpload.click());
       videoContainer.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -200,10 +189,13 @@
       clearResultsBtn.addEventListener('click', clearFrames);
       resetVideoBtn.addEventListener('click', () => resetVideoAndFrames(false));
 
+      /**
+       * Menangani file video yang diunggah, memvalidasi, dan menampilkannya di pemutar video.
+       * @param {File} file - Objek file video yang dipilih oleh pengguna.
+       */
       function handleFileUpload(file) {
         if (file && file.type.startsWith('video/')) {
-          // Fully reset state before loading a new video to prevent bugs
-          resetVideoAndFrames(true); // 'true' to keep the new file reference
+          resetVideoAndFrames(true);
 
           videoFile = file;
           const fileURL = URL.createObjectURL(videoFile);
@@ -218,6 +210,9 @@
         }
       }
 
+      /**
+       * Memulai proses ekstraksi frame setelah memvalidasi input interval.
+       */
       function startExtraction() {
         if (!videoFile) return;
 
@@ -227,7 +222,6 @@
           return;
         }
 
-        // Reset UI
         clearFrames();
         statusDiv.textContent = 'Mempersiapkan video...';
         setButtonsState(true);
@@ -236,14 +230,17 @@
           canvas.width = videoPlayer.videoWidth;
           canvas.height = videoPlayer.videoHeight;
           statusDiv.textContent = `Video dimuat. Durasi: ${videoPlayer.duration.toFixed(2)}s.`;
-          extractFrames(interval / 1000); // Convert ms to seconds for video.currentTime
+          extractFrames(interval / 1000);
         };
-        // If metadata is already loaded
         if (videoPlayer.readyState >= 1) {
           videoPlayer.onloadedmetadata();
         }
       }
 
+      /**
+       * Melakukan loop ekstraksi frame dari video pada interval yang ditentukan.
+       * @param {number} intervalInSeconds - Interval antar frame dalam detik.
+       */
       function extractFrames(intervalInSeconds) {
         let currentTime = 0;
         const duration = videoPlayer.duration;
@@ -280,6 +277,11 @@
         seek();
       }
 
+      /**
+       * Menampilkan satu frame yang diekstrak ke dalam galeri hasil.
+       * @param {string} src - Data URL (base64) dari gambar frame.
+       * @param {number} time - Timestamp (dalam detik) dari frame tersebut di video.
+       */
       function displayFrame(src, time) {
         const frameWrapper = document.createElement('div');
         frameWrapper.className = 'relative group';
@@ -297,6 +299,9 @@
         frameContainer.appendChild(frameWrapper);
       }
 
+      /**
+       * Mengemas semua frame yang diekstrak ke dalam file .zip dan memicu unduhan.
+       */
       async function downloadAllFrames() {
         if (extractedFramesData.length === 0) return;
         statusDiv.textContent = 'Membuat file zip...';
@@ -326,6 +331,9 @@
         }
       }
 
+      /**
+       * Membersihkan galeri hasil dan data frame yang tersimpan.
+       */
       function clearFrames() {
         frameContainer.innerHTML = '';
         extractedFramesData = [];
@@ -336,6 +344,10 @@
         }
       }
 
+      /**
+       * Mereset total aplikasi ke keadaan awal, termasuk menghapus video yang sedang dimuat.
+       * @param {boolean} [keepFile=false] - Jika true, jangan hapus referensi file video (digunakan saat memuat video baru).
+       */
       function resetVideoAndFrames(keepFile = false) {
         videoPlayer.pause();
         videoPlayer.removeAttribute('src');
@@ -354,6 +366,11 @@
         resetVideoBtn.disabled = true;
       }
 
+      /**
+       * Mengatur status aktif/nonaktif dari tombol-tombol interaktif berdasarkan state aplikasi.
+       * @param {boolean} isExtracting - True jika proses ekstraksi sedang berlangsung.
+       * @param {boolean} [hasResults=false] - True jika ada frame di galeri hasil.
+       */
       function setButtonsState(isExtracting, hasResults = false) {
         extractBtn.disabled = isExtracting;
         intervalInput.disabled = isExtracting;
